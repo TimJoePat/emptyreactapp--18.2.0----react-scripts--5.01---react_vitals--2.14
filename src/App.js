@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./styles.css";
 import { useReducer } from "react";
 
@@ -26,6 +27,7 @@ const initialState = {
 };
 
 function reducer(state, action) {
+  if (!state.isActive && action.type !== "openAccount") return state;
   switch (action.type) {
     case "openAccount":
       return {
@@ -39,16 +41,28 @@ function reducer(state, action) {
         balance: state.balance + action.payload,
       };
     case "withdraw":
+      if (state.balance < action.payload) return state;
       return {
         ...state,
         balance: state.balance - action.payload,
       };
     case "requestLoan":
-      return "";
+      if (state.loan > 0) return state;
+      return {
+        ...state,
+        loan: action.payload,
+        balance: state.balance + action.payload,
+      };
     case "payLoan":
-      return "";
+      if (state.loan < action.payload) return state;
+      return {
+        ...state,
+        loan: 0,
+        balance: state.balance - state.loan,
+      };
     case "closeAccount":
-      return "";
+      if (state.loan > 0 || state.balance !== 0) return state;
+      return initialState;
     default:
       throw new Error("reducer switch default:");
   }
@@ -92,7 +106,7 @@ export default function App() {
       </p>
       <p>
         <button
-          onClick={() => {}}
+          onClick={() => dispatch({ type: "requestLoan", payload: 5000 })}
           disabled={!isActive}
         >
           Request a loan of 5000
@@ -100,7 +114,7 @@ export default function App() {
       </p>
       <p>
         <button
-          onClick={() => {}}
+          onClick={() => dispatch({ type: "payLoan" })}
           disabled={!isActive}
         >
           Pay loan
@@ -108,7 +122,7 @@ export default function App() {
       </p>
       <p>
         <button
-          onClick={() => {}}
+          onClick={() => dispatch({ type: "closeAccount" })}
           disabled={!isActive}
         >
           Close account
